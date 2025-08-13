@@ -11,8 +11,8 @@ local TELEPORT_DELAY = 0.6        -- giây giữa 2 lần TP
 local OFFSET_Y = 3                -- offset cao hơn part để tránh kẹt
 local RESET_AFTER_FINISH = true   -- respawn khi hoàn tất
 -- Tên map (child of workspace.Map) mà bạn muốn bay tới sau khi respawn
-local FLY_TO_MAP = "MarineStart"  
-local FLY_SPEED = 300             -- tốc độ bay (theo yêu cầu)
+local FLY_TO_MAP = "Chest1"  
+local FLY_SPEED = 350             -- tốc độ bay (theo yêu cầu)
 local FLY_ARRIVE_DIST = 10        -- khoảng cách đủ gần để dừng (studs)
 local FLY_TIMEOUT = 30            -- timeout cho hành trình bay (giây)
 -- ===================
@@ -314,5 +314,6 @@ resetButton.MouseButton1Click:Connect(function()
     pcall(function() player:LoadCharacter() end)
     print("[AutoTP] Reset nhân vật theo yêu cầu.")
 end)
+
 
 updateUI()
