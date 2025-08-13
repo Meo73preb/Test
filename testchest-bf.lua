@@ -11,9 +11,9 @@ local TELEPORT_DELAY = 0.6        -- giây giữa 2 lần TP
 local OFFSET_Y = 3                -- offset cao hơn part để tránh kẹt
 local RESET_AFTER_FINISH = true   -- respawn khi hoàn tất
 -- Tên map (child of workspace.Map) mà bạn muốn bay tới sau khi respawn
-local FLY_TO_MAP = "workspace.Map.Magma" or "workspace.Map.Ice"  
+local FLY_TO_MAP = "Magma"
 local FLY_SPEED = 999999999999999 -- tốc độ bay (theo yêu cầu)
-local FLY_ARRIVE_DIST = 375        -- khoảng cách đủ gần để dừng (studs)
+local FLY_ARRIVE_DIST = 14        -- khoảng cách đủ gần để dừng (studs)
 local FLY_TIMEOUT = 30            -- timeout cho hành trình bay (giây)
 -- ===================
 
@@ -317,4 +317,5 @@ end)
 
 
 updateUI()
+
 
