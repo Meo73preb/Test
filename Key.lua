@@ -26,7 +26,3 @@ else
     })
     return
 end
-    game.StarterGui:SetCore("SendNotification", {
-        Title = "Thông báo";
-        Text = "key sai mua key để sài!";
-        Duration = 5;
