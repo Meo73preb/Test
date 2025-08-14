@@ -15,7 +15,7 @@ if validKeys[inputKey] then
     loadstring(game:HttpGet("https://raw.githubusercontent.com/Meo73preb/Test/refs/heads/main/testchest-bf.lua"))()
     game.StarterGui:SetCore("SendNotification", {
         Title = "Thông báo";
-        Text = "Chào mừng bạn vào script VIP!";
+        Text = "Chào mừng bạn vào script!";
         Duration = 5;
     })
 else
