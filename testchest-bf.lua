@@ -1,5 +1,4 @@
 -- AutoTP with UI + reliable respawn + fly to multiple islands (areas) in priority order
--- LocalScript (StarterPlayerScripts)
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -22,7 +21,6 @@ local currentAreaIndex = 1
 
 -- ===== UI Creation =====
 local function createUI()
-    -- Create ScreenGui & frame
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "AutoTPFlyUI"
     screenGui.ResetOnSpawn = false
@@ -123,7 +121,6 @@ local function updateUI()
     end
 end
 
--- ===== Helpers =====
 local function getPrimaryPartFor(obj)
     if obj:IsA("Model") then
         return obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
@@ -144,7 +141,6 @@ local function teleportCharacterTo(part)
 end
 
 local function getChestParts(areaName)
-    -- Chỉ lấy chest trong khu vực (map) chỉ định
     local workspaceMap = workspace:FindFirstChild("Map")
     if not workspaceMap then return {} end
     local area = workspaceMap:FindFirstChild(areaName)
@@ -170,11 +166,78 @@ local function respawnPlayer()
 end
 
 local function flyToArea(areaName)
-    -- Bay đến vị trí của đảo chỉ định bằng BodyVelocity
     local workspaceMap = workspace:FindFirstChild("Map")
     if not workspaceMap then return false end
     local targetArea = workspaceMap:FindFirstChild(areaName)
     if not targetArea then return false end
     local targetPart = getPrimaryPartFor(targetArea)
-    if not targetPart then
-        -- Nếu không có Primary
+    if not targetPart then return false end
+
+    local character = player.Character or player.CharacterAdded:Wait()
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then return false end
+
+    -- Bay bằng BodyVelocity
+    local bv = Instance.new("BodyVelocity")
+    bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+    bv.Parent = root
+
+    local arrived = false
+    local start = tick()
+    while (tick() - start < FLY_TIMEOUT) and not arrived and running do
+        local direction = (targetPart.Position - root.Position)
+        if direction.Magnitude < FLY_ARRIVE_DIST then
+            arrived = true
+            break
+        end
+        bv.Velocity = direction.Unit * FLY_SPEED
+        RunService.RenderStepped:Wait()
+    end
+
+    bv:Destroy()
+    return arrived
+end
+
+local function runAutoTP()
+    processing = true
+    for idx, areaName in ipairs(AREA_LIST) do
+        currentAreaIndex = idx
+        updateUI()
+
+        local chestParts = getChestParts(areaName)
+        for _, part in ipairs(chestParts) do
+            if not running then break end
+            teleportCharacterTo(part)
+            wait(TELEPORT_DELAY)
+        end
+
+        if RESET_AFTER_FINISH and running then
+            respawnPlayer()
+            wait(2)
+            flyToArea(areaName)
+            wait(1)
+        end
+    end
+    currentAreaIndex = #AREA_LIST + 1
+    running = false
+    processing = false
+    updateUI()
+end
+
+toggleButton.MouseButton1Click:Connect(function()
+    if not running then
+        running = true
+        currentAreaIndex = 1
+        updateUI()
+        spawn(runAutoTP)
+    else
+        running = false
+        updateUI()
+    end
+end)
+
+resetButton.MouseButton1Click:Connect(function()
+    respawnPlayer()
+end)
+
+updateUI()
