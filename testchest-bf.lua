@@ -1,4 +1,4 @@
--- Auto TP Chest, reset bằng kill humanoid, bay đến đảo ngẫu nhiên, lặp vô hạn, có UI Start/Stop/Reset
+-- Auto TP Chest + reset nhân vật (kill Humanoid) + bay tới đảo ngẫu nhiên + lặp vô hạn, UI hỗ trợ Delta X
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -26,7 +26,7 @@ local function createUI()
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "AutoTPChestRandomIslandUI"
     screenGui.ResetOnSpawn = false
-    screenGui.Parent = game.CoreGui
+    screenGui.Parent = game:GetService("CoreGui")
 
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(0, 320, 0, 170)
@@ -201,7 +201,8 @@ local function runLoopTP()
 
         -- 2. Reset nhân vật bằng kill Humanoid
         killCharacter()
-        wait(1.5)
+        player.CharacterAdded:Wait()
+        wait(0.5)
 
         -- 3. Chọn đảo ngẫu nhiên, bay tới đó
         local randIdx = math.random(1, #ISLAND_LIST)
