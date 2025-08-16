@@ -1,4 +1,4 @@
--- Auto TP Chest + reset nhân vật (kill Humanoid) + bay tới đảo ngẫu nhiên + lặp vô hạn, UI hỗ trợ Delta X
+-- Cat x Chest: Auto TP Chest (2 lần mỗi chest) + reset nhân vật + bay tới đảo ngẫu nhiên + xử lý đặc biệt cho SkyArea2 + noclip khi bay, UI cho Delta X
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -24,7 +24,7 @@ local currentIsland = ""
 --- ===== UI Creation =====
 local function createUI()
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "AutoTPChestRandomIslandUI"
+    screenGui.Name = "Cat_x_Chest_UI"
     screenGui.ResetOnSpawn = false
     screenGui.Parent = game:GetService("CoreGui")
 
@@ -36,7 +36,7 @@ local function createUI()
     frame.Parent = screenGui
 
     local title = Instance.new("TextLabel")
-    title.Text = "Auto TP Chest + Random Island"
+    title.Text = "Cat x Chest"
     title.Size = UDim2.new(1, 0, 0, 36)
     title.Position = UDim2.new(0, 0, 0, 0)
     title.Font = Enum.Font.GothamBold
@@ -151,21 +151,87 @@ local function killCharacter()
     end
 end
 
+-- Noclip: liên tục set CanCollide = false cho các part của nhân vật
+local noclipActive = false
+local function enableNoclip()
+    noclipActive = true
+    RunService.Stepped:Connect(function()
+        if noclipActive and player.Character then
+            for _,v in pairs(player.Character:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    v.CanCollide = false
+                end
+            end
+        end
+    end)
+end
+local function disableNoclip()
+    noclipActive = false
+    if player.Character then
+        for _,v in pairs(player.Character:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.CanCollide = true
+            end
+        end
+    end
+end
+
 local function flyToIsland(islandName)
     if islandName == "SkyArea2" then
-        local area = MAP_FOLDER and MAP_FOLDER:FindFirstChild(islandName)
-        local part = area and getPrimaryPartFor(area)
-        if part then teleportCharacterTo(part) end
-        return true
+        -- Đảo đặc biệt: TP tới Exit, chờ 2s, rồi bay tới Bell
+        local skyArea = MAP_FOLDER and MAP_FOLDER:FindFirstChild("SkyArea2")
+        if not skyArea then return false end
+
+        local pathwayHouse = skyArea:FindFirstChild("PathwayHouse")
+        local exitPart = pathwayHouse and pathwayHouse:FindFirstChild("Exit")
+        if exitPart then
+            teleportCharacterTo(exitPart)
+            wait(2)
+        end
+
+        -- Bay tới Bell
+        local bellPath = skyArea:FindFirstChild("Bell")
+        local bellModel = bellPath and bellPath:FindFirstChild("Model")
+        local bellPart = bellModel and bellModel:FindFirstChild("Bell")
+        if bellPart then
+            enableNoclip()
+            local character = player.Character or player.CharacterAdded:Wait()
+            local root = character:FindFirstChild("HumanoidRootPart")
+            if root then
+                local bv = Instance.new("BodyVelocity")
+                bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+                bv.Parent = root
+                local arrived = false
+                local start = tick()
+                while (tick() - start < FLY_TIMEOUT) and not arrived and running do
+                    local direction = (bellPart.Position - root.Position)
+                    if direction.Magnitude < FLY_ARRIVE_DIST then
+                        arrived = true
+                        break
+                    end
+                    bv.Velocity = direction.Unit * FLY_SPEED
+                    RunService.RenderStepped:Wait()
+                end
+                bv:Destroy()
+            end
+            disableNoclip()
+            return true
+        end
+        return false
     end
 
+    -- Đảo thường: bay tới PrimaryPart
     local area = MAP_FOLDER and MAP_FOLDER:FindFirstChild(islandName)
     local targetPart = area and getPrimaryPartFor(area)
     if not targetPart then return false end
 
+    enableNoclip()
     local character = player.Character or player.CharacterAdded:Wait()
     local root = character:FindFirstChild("HumanoidRootPart")
-    if not root then return false end
+    if not root then
+        disableNoclip()
+        return false
+    end
 
     local bv = Instance.new("BodyVelocity")
     bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
@@ -184,6 +250,7 @@ local function flyToIsland(islandName)
     end
 
     bv:Destroy()
+    disableNoclip()
     return arrived
 end
 
@@ -192,9 +259,11 @@ local function runLoopTP()
     while running do
         currentIsland = ""
         updateUI()
-        -- 1. TP hết chest trong ChestModels
+        -- 1. TP 2 lần mỗi chest trong ChestModels
         for _, part in ipairs(getChestParts()) do
             if not running then break end
+            teleportCharacterTo(part)
+            wait(TELEPORT_DELAY)
             teleportCharacterTo(part)
             wait(TELEPORT_DELAY)
         end
